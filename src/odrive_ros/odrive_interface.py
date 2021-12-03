@@ -9,9 +9,6 @@ import traceback
 import odrive
 from odrive.enums import *
 
-import fibre
-from fibre import ChannelBrokenException, ChannelDamagedException
-
 default_logger = logging.getLogger(__name__)
 default_logger.setLevel(logging.DEBUG)
 
@@ -59,9 +56,10 @@ class ODriveInterfaceAPI(object):
         if self.driver:
             self.logger.info("Already connected. Disconnecting and reconnecting.")
         try:
-            self.driver = odrive.find_any(timeout=timeout, logger=self.logger)
+            self.driver = odrive.find_any(timeout=timeout)
             self.axes = (self.driver.axis0, self.driver.axis1)
-        except:
+        except BaseException as e:
+            raise e
             self.logger.error("No ODrive found. Is device powered?")
             return False
                         

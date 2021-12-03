@@ -14,6 +14,7 @@ from geometry_msgs.msg import Twist, TransformStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
 import std_srvs.srv
+import queue
 
 #roslib.load_manifest('diagnostic_updater')
 import diagnostic_updater, diagnostic_msgs.msg
@@ -118,7 +119,7 @@ class ODriveNode(object):
         self.status = "disconnected"
         self.status_pub.publish(self.status)
         
-        self.command_queue = Queue.Queue(maxsize=5)
+        self.command_queue = queue.Queue(maxsize=5)
         self.vel_subscribe = rospy.Subscriber("/cmd_vel", Twist, self.cmd_vel_callback, queue_size=2)
         
         self.publish_diagnostics = True
