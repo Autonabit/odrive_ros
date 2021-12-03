@@ -21,11 +21,10 @@ import diagnostic_updater, diagnostic_msgs.msg
 import time
 import math
 import traceback
-import Queue
 
-from odrive_interface import ODriveInterfaceAPI, ODriveFailure
-from odrive_interface import ChannelBrokenException, ChannelDamagedException
-from odrive_simulator import ODriveInterfaceSimulator
+from odrive_ros.odrive_interface import ODriveInterfaceAPI
+from fibre.protocol import ObjectLostError, ChannelDamagedException
+
 
 class ROSLogger(object):
     """Imitate a standard Python logger, but pass the messages to rospy logging.
@@ -73,8 +72,6 @@ class ODriveNode(object):
     
     # Startup parameters
     connect_on_startup = False
-    calibrate_on_startup = False
-    engage_on_startup = False
     
     publish_joint_angles = True
     # Simulation mode
@@ -91,8 +88,6 @@ class ODriveNode(object):
         self.tyre_circumference = float(get_param('~tyre_circumference', 0.341)) # used to translate velocity commands in m/s into motor rpm
         
         self.connect_on_startup   = get_param('~connect_on_startup', False)
-        #self.calibrate_on_startup = get_param('~calibrate_on_startup', False)
-        #self.engage_on_startup    = get_param('~engage_on_startup', False)
         
         self.has_preroll     = get_param('~use_preroll', True)
                 
@@ -249,7 +244,7 @@ class ODriveNode(object):
                     else:
                         # must have called connect service from another node
                         self.fast_timer_comms_active = True
-                except (ChannelBrokenException, ChannelDamagedException, AttributeError):
+                except (ObjectLostError, ChannelDamagedException, AttributeError):
                     rospy.logerr("ODrive USB connection failure in main_loop.")
                     self.status = "disconnected"
                     self.status_pub.publish(self.status)
@@ -323,7 +318,7 @@ class ODriveNode(object):
                     # voltage
                     self.bus_voltage = self.driver.bus_voltage()
                     
-            except (ChannelBrokenException, ChannelDamagedException):
+            except (ObjectLostError, ChannelDamagedException):
                 rospy.logerr("ODrive USB connection failure in fast_timer." + traceback.format_exc(1))
                 self.fast_timer_comms_active = False
                 self.status = "disconnected"
@@ -357,7 +352,7 @@ class ODriveNode(object):
                 # release motor after 10s stopped
                 if (time_now - self.last_cmd_vel_time).to_sec() > 10.0 and self.driver.engaged():
                     self.driver.release() # and release            
-        except (ChannelBrokenException, ChannelDamagedException):
+        except (ObjectLostError, ChannelDamagedException):
             rospy.logerr("ODrive USB connection failure in cmd_vel timeout." + traceback.format_exc(1))
             self.fast_timer_comms_active = False
             self.driver = None
@@ -398,7 +393,7 @@ class ODriveNode(object):
                     self.driver.drive(left_linear_val, right_linear_val)
                     self.last_speed = max(abs(left_linear_val), abs(right_linear_val))
                     self.last_cmd_vel_time = time_now
-                except (ChannelBrokenException, ChannelDamagedException):
+                except (ObjectLostError, ChannelDamagedException):
                     rospy.logerr("ODrive USB connection failure in drive_cmd." + traceback.format_exc(1))
                     self.fast_timer_comms_active = False
                     self.driver = None
@@ -423,7 +418,7 @@ class ODriveNode(object):
         if self.driver:
             return (False, "Already connected.")
         
-        ODriveClass = ODriveInterfaceAPI if not self.sim_mode else ODriveInterfaceSimulator
+        ODriveClass = ODriveInterfaceAPI # if not self.sim_mode else ODriveInterfaceSimulator
         
         self.driver = ODriveInterfaceAPI(logger=ROSLogger())
         rospy.loginfo("Connecting to ODrive...")
@@ -528,31 +523,9 @@ class ODriveNode(object):
         return left_linear_val, right_linear_val
 
     def cmd_vel_callback(self, msg):
-        #rospy.loginfo("Received a /cmd_vel message!")
-        #rospy.loginfo("Linear Components: [%f, %f, %f]"%(msg.linear.x, msg.linear.y, msg.linear.z))
-        #rospy.loginfo("Angular Components: [%f, %f, %f]"%(msg.angular.x, msg.angular.y, msg.angular.z))
 
-        # rostopic pub -r 1 /commands/motor/current std_msgs/Float64 -- -1.0
-
-        # Do velocity processing here:
-        # Use the kinematics of your robot to map linear and angular velocities into motor commands
-        
-        # 3600 ERPM = 360 RPM ~= 6 km/hr
-        
-        #angular_to_linear = msg.angular.z * (wheel_track/2.0) 
-        #left_linear_rpm  = (msg.linear.x - angular_to_linear) * m_s_to_erpm
-        #right_linear_rpm = (msg.linear.x + angular_to_linear) * m_s_to_erpm
         left_linear_val, right_linear_val = self.convert(msg.linear.x, msg.angular.z)
         
-        # if wheel speed = 0, stop publishing after sending 0 once. #TODO add error term, work out why VESC turns on for 0 rpm
-        
-        # Then set your wheel speeds (using wheel_left and wheel_right as examples)
-        #self.left_motor_pub.publish(left_linear_rpm)
-        #self.right_motor_pub.publish(right_linear_rpm)
-        #wheel_left.set_speed(v_l)
-        #wheel_right.set_speed(v_r)
-        
-        #rospy.logdebug("Driving left: %d, right: %d, from linear.x %.2f and angular.z %.2f" % (left_linear_val, right_linear_val, msg.linear.x, msg.angular.z))
         try:
             drive_command = ('drive', (left_linear_val, right_linear_val))
             self.command_queue.put_nowait(drive_command)
