@@ -434,8 +434,8 @@ class ODriveNode(object):
         self.m_s_to_value = self.driver.encoder_cpr/self.tyre_circumference
         
         if self.publish_odom:
-            self.old_pos_l = self.driver.left_axis.encoder.pos_cpr
-            self.old_pos_r = self.driver.right_axis.encoder.pos_cpr
+            self.old_pos_l = self.driver.left_axis.encoder.pos_cpr_counts
+            self.old_pos_r = self.driver.right_axis.encoder.pos_cpr_counts
         
         self.fast_timer_comms_active = True
         
