@@ -87,6 +87,10 @@ class ODriveNode(object):
         self.axis_for_right = float(get_param('~axis_for_right', 0)) # if right calibrates first, this should be 0, else 1
         self.wheel_track = float(get_param('~wheel_track', 0.285)) # m, distance between wheel centres
         self.tyre_circumference = float(get_param('~tyre_circumference', 0.341)) # used to translate velocity commands in m/s into motor rpm
+
+        self.reverse_left = float(get_param('~reverse_left', False)) # if right calibrates first, this should be 0, else 1
+        self.reverse_right = float(get_param('~reverse_right', False)) # if right calibrates first, this should be 0, else 1
+
         
         self.connect_on_startup   = get_param('~connect_on_startup', False)
         
@@ -423,7 +427,7 @@ class ODriveNode(object):
         
         self.driver = ODriveInterfaceAPI(logger=ROSLogger())
         rospy.loginfo("Connecting to ODrive...")
-        if not self.driver.connect(right_axis=self.axis_for_right):
+        if not self.driver.connect(right_axis=self.axis_for_right, flip_left_direction=self.reverse_left, flip_right_direction=self.reverse_right):
             self.driver = None
             #rospy.logerr("Failed to connect.")
             return (False, "Failed to connect.")
@@ -483,7 +487,7 @@ class ODriveNode(object):
         if not self.driver:
             rospy.logerr("Not connected.")
             return (False, "Not connected.")
-        if not self.driver.has_prerolled():
+        if not self.driver.has_prerolled() and self.has_preroll:
             return (False, "Not prerolled.")
         if not self.driver.engage():
             return (False, "Failed to engage motor.")

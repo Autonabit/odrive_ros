@@ -33,6 +33,8 @@ class ODriveInterfaceAPI(object):
     
     def __init__(self, logger=None, active_odrive=None):
         self.logger = logger if logger else default_logger
+        self.flip_left_direction = False
+        self.flip_right_direction = False
         
         if active_odrive: # pass in the odrv0 object from odrivetool shell to use it directly.
             self.driver = active_odrive
@@ -52,7 +54,9 @@ class ODriveInterfaceAPI(object):
         # provided so simulator can update position
         pass
                     
-    def connect(self, port=None, right_axis=0, timeout=30):
+    def connect(self, port=None, right_axis=0, flip_left_direction=False, flip_right_direction=False, timeout=30):
+        self.flip_left_direction = flip_left_direction
+        self.flip_right_direction = flip_right_direction
         if self.driver:
             self.logger.info("Already connected. Disconnecting and reconnecting.")
         try:
@@ -291,11 +295,17 @@ class ODriveInterfaceAPI(object):
         
         if axis_error:
             return error_string
+
+    def flip_l(self, value):
+        return -value if self.flip_left_direction else value
+
+    def flip_r(self, value):
+        return -value if self.flip_right_direction else value
             
-    def left_vel_estimate(self):  return self.left_axis.encoder.vel_estimate   if self.left_axis  else 0 # units: encoder counts/s
-    def right_vel_estimate(self): return self.right_axis.encoder.vel_estimate  if self.right_axis else 0 # neg is forward for right
-    def left_pos(self):           return self.left_axis.encoder.pos_cpr_counts        if self.left_axis  else 0  # units: encoder counts
-    def right_pos(self):          return self.right_axis.encoder.pos_cpr_counts       if self.right_axis else 0   # sign!
+    def left_vel_estimate(self):  return self.flip_l( self.left_axis.encoder.vel_estimate )   if self.left_axis  else 0 # units: encoder counts/s
+    def right_vel_estimate(self): return self.flip_r( self.right_axis.encoder.vel_estimate )  if self.right_axis else 0 # neg is forward for right
+    def left_pos(self):           return self.flip_l( self.left_axis.encoder.pos_cpr_counts )        if self.left_axis  else 0  # units: encoder counts
+    def right_pos(self):          return self.flip_r( self.right_axis.encoder.pos_cpr_counts )       if self.right_axis else 0   # sign!
     
     # TODO check these match the right motors, but it doesn't matter for now
     def left_temperature(self):   return self.left_axis.motor.fet_thermistor.temperature  if self.left_axis  else 0.

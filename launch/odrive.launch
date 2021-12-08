@@ -13,6 +13,11 @@
             output="$(arg output)" respawn="$(arg respawn)">
         <param name="wheel_track" value="0.285"/>
         <param name="tyre_circumference" value="0.341"/>
+
+        <param name="axis_for_right" value="0"/>
+        <param name="reverse_left" value="False"/>
+        <param name="reverse_right" value="False"/>
+        
         <param name="use_preroll"   value="$(arg use_preroll)"/>
         
         <param name="connect_on_startup"   value="$(arg connect_on_startup)"/>
