@@ -522,8 +522,8 @@ class ODriveNode(object):
     
     def convert(self, forward, ccw):
         angular_to_linear = ccw * (self.wheel_track/2.0) 
-        left_linear_val  = int((forward - angular_to_linear) * self.m_s_to_value)
-        right_linear_val = int((forward + angular_to_linear) * self.m_s_to_value)
+        left_linear_val  = int((forward - angular_to_linear) * self.tyre_circumference)
+        right_linear_val = int((forward + angular_to_linear) * self.tyre_circumference)
     
         return left_linear_val, right_linear_val
 
