@@ -522,8 +522,8 @@ class ODriveNode(object):
     
     def convert(self, forward, ccw):
         angular_to_linear = ccw * (self.wheel_track/2.0) 
-        left_linear_val  = int((forward - angular_to_linear) * self.m_s_to_value)
-        right_linear_val = int((forward + angular_to_linear) * self.m_s_to_value)
+        left_linear_val  = float((forward - angular_to_linear) * self.m_s_to_value)
+        right_linear_val = float((forward + angular_to_linear) * self.m_s_to_value)
     
         return left_linear_val, right_linear_val
 
@@ -534,7 +534,7 @@ class ODriveNode(object):
         try:
             drive_command = ('drive', (left_linear_val, right_linear_val))
             self.command_queue.put_nowait(drive_command)
-        except Queue.Full:
+        except queue.Full:
             pass
             
         self.last_cmd_vel_time = rospy.Time.now()
