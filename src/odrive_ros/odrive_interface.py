@@ -56,7 +56,12 @@ class ODriveInterfaceAPI(object):
                     
     def connect(self, port=None, right_axis=0, flip_left_direction=False, flip_right_direction=False, timeout=30):
         self.flip_left_direction = flip_left_direction
+        if self.flip_left_direction:
+            self.logger.info("Reversing left motor direction")
         self.flip_right_direction = flip_right_direction
+        if self.flip_right_direction:
+            self.logger.info("Reversing right motor direction")
+
         if self.driver:
             self.logger.info("Already connected. Disconnecting and reconnecting.")
         try:
@@ -264,8 +269,8 @@ class ODriveInterfaceAPI(object):
             self.logger.error("Not connected.")
             return
         #try:
-        self.left_axis.controller.input_vel = left_motor_val
-        self.right_axis.controller.input_vel = -right_motor_val
+        self.left_axis.controller.input_vel = self.flip_l( left_motor_val)
+        self.right_axis.controller.input_vel = self.flip_r( right_motor_val)
         #except (fibre.protocol.ChannelBrokenException, AttributeError) as e:
         #    raise ODriveFailure(str(e))
         
