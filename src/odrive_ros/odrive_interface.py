@@ -269,7 +269,6 @@ class ODriveInterfaceAPI(object):
             self.logger.error("Not connected.")
             return
         #try:
-        rospy.logdebug("Drive: (%f, %f)" %(left_motor_val, right_motor_val))
         self.left_axis.controller.input_vel = self.flip_l( left_motor_val)
         self.right_axis.controller.input_vel = self.flip_r( right_motor_val)
         #except (fibre.protocol.ChannelBrokenException, AttributeError) as e:

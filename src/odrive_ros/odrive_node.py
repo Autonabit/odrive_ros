@@ -158,8 +158,8 @@ class ODriveNode(object):
         if self.publish_raw_odom:
             self.raw_odom_publisher_encoder_left  = rospy.Publisher('left/raw_odom/encoder',   Int32, queue_size=2) if self.publish_raw_odom else None
             self.raw_odom_publisher_encoder_right = rospy.Publisher('right/raw_odom/encoder',  Int32, queue_size=2) if self.publish_raw_odom else None
-            self.raw_odom_publisher_vel_left      = rospy.Publisher('left/raw_odom/velocity',  Int32, queue_size=2) if self.publish_raw_odom else None
-            self.raw_odom_publisher_vel_right     = rospy.Publisher('right/raw_odom/velocity', Int32, queue_size=2) if self.publish_raw_odom else None
+            self.raw_odom_publisher_vel_left      = rospy.Publisher('left/raw_odom/velocity',  Float64, queue_size=2) if self.publish_raw_odom else None
+            self.raw_odom_publisher_vel_right     = rospy.Publisher('right/raw_odom/velocity', Float64, queue_size=2) if self.publish_raw_odom else None
                             
         if self.publish_odom:
             rospy.Service('reset_odometry',    std_srvs.srv.Trigger, self.reset_odometry)
@@ -310,10 +310,10 @@ class ODriveNode(object):
                     self.m_s_to_value = self.encoder_cpr/self.tyre_circumference # calculated
                 
                     self.driver.update_time(time_now.to_sec())
-                    self.vel_l = self.driver.left_vel_estimate()   # units: encoder counts/s
-                    self.vel_r = -self.driver.right_vel_estimate() # neg is forward for right
-                    self.new_pos_l = self.driver.left_pos()        # units: encoder counts
-                    self.new_pos_r = -self.driver.right_pos()      # sign!
+                    self.vel_l = self.driver.left_vel_estimate()
+                    self.vel_r = self.driver.right_vel_estimate()
+                    self.new_pos_l = self.driver.left_pos() 
+                    self.new_pos_r = self.driver.right_pos()
                     
                     # for temperatures
                     self.temp_v_l = self.driver.left_temperature()
