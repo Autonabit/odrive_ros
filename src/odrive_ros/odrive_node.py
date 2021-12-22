@@ -24,8 +24,8 @@ import math
 import traceback
 
 from odrive_ros.odrive_interface import ODriveInterfaceAPI
-#from fibre.protocol import ObjectLostError, ChannelDamagedException
-from fibre.libfibre import ObjectLostError, ChannelDamagedException
+from fibre.protocol import ObjectLostError, ChannelDamagedException
+#from fibre.libfibre import ObjectLostError, ChannelDamagedException
 
 
 class ROSLogger(object):
