@@ -3,9 +3,9 @@ from odrive.enums import *
 import time
 from fibre.libfibre import ObjectLostError
 
-VEL_GAIN = 10
-VEL_INTEGRATOR_GAIN = 20
-VEL_INTEGRATOR_LIMIT = 500
+VEL_GAIN = 20
+VEL_INTEGRATOR_GAIN = 50
+VEL_INTEGRATOR_LIMIT = 10000
 CURRENT_LIM = 20
 
 def set_gains(odriv):
@@ -63,17 +63,21 @@ if odrv0:
     odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
     odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
     turn(0.2, 4, odrv0)
-    # for i in range(5):
-    #     move(0.5, 3, odrv0) 
-    #     time.sleep(2)
+    turn(-0.2, 4, odrv0)
+    for i in range(0):
+        move(0.5, 3, odrv0) 
+        time.sleep(2)
 
     #     #turn(0.2, 3, odrv0)
     #     #time.sleep(2)
 
-    #     move(-0.5, 3, odrv0) 
-    #     time.sleep(2)
+        move(-0.5, 3, odrv0) 
+        time.sleep(2)
 
     #     #turn(-0.2, 3, odrv0)
 
     odrv0.axis0.requested_state = AXIS_STATE_IDLE
     odrv0.axis1.requested_state = AXIS_STATE_IDLE
+
+    odrv0.save_configuration()
+    print("Saved config")
