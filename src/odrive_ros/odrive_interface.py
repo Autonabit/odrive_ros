@@ -31,10 +31,11 @@ class ODriveInterfaceAPI(object):
     _preroll_completed = False
     #engaged = False
     
-    def __init__(self, logger=None, active_odrive=None):
+    def __init__(self, logger=None, active_odrive=None, torque_control=False):
         self.logger = logger if logger else default_logger
         self.flip_left_direction = False
         self.flip_right_direction = False
+        self.torque_control = torque_control
         
         if active_odrive: # pass in the odrv0 object from odrivetool shell to use it directly.
             self.driver = active_odrive
@@ -248,7 +249,10 @@ class ODriveInterfaceAPI(object):
         for axis in self.axes:
             axis.controller.input_vel = 0
             axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
-            axis.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+            if self.torque_control:
+                axis.controller.config.control_mode = CONTROL_MODE_TORQUE_CONTROL
+            else:
+                axis.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
         
         #self.engaged = True
         return True
@@ -269,8 +273,13 @@ class ODriveInterfaceAPI(object):
             self.logger.error("Not connected.")
             return
         #try:
-        self.left_axis.controller.input_vel = self.flip_l( left_motor_val)
-        self.right_axis.controller.input_vel = self.flip_r( right_motor_val)
+        if self.torque_control:
+            self.left_axis.controller.input_torque = self.flip_l( left_motor_val)
+            self.right_axis.controller.input_torque = self.flip_r( right_motor_val)
+        else:
+            self.left_axis.controller.input_vel = self.flip_l( left_motor_val)
+            self.right_axis.controller.input_vel = self.flip_r( right_motor_val)
+        
         #except (fibre.protocol.ChannelBrokenException, AttributeError) as e:
         #    raise ODriveFailure(str(e))
         
