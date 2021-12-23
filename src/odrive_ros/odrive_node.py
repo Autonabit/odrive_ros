@@ -224,6 +224,8 @@ class ODriveNode(object):
         # Start timer to run high-rate comms
         self.fast_timer = rospy.Timer(rospy.Duration(1/float(self.odom_calc_hz)), self.fast_timer)
         
+        self.fastest_timer = rospy.Timer(rospy.Duration(1/100), self.fastest_timer)
+        
         self.fast_timer_comms_active = False
         
         while not rospy.is_shutdown():
@@ -312,8 +314,6 @@ class ODriveNode(object):
                     self.m_s_to_value = self.encoder_cpr/self.tyre_circumference # calculated
                 
                     self.driver.update_time(time_now.to_sec())
-                    self.vel_l = self.driver.left_vel_estimate()
-                    self.vel_r = self.driver.right_vel_estimate()
                     self.new_pos_l = self.driver.left_pos() 
                     self.new_pos_r = self.driver.right_pos()
                     
@@ -369,10 +369,14 @@ class ODriveNode(object):
             rospy.logerr("cmd_vel timeout unknown failure:" + traceback.format_exc())
             self.fast_timer_comms_active = False
 
-        
+    def fastest_timer(self, timer_event):
         # handle sending drive commands.
         # from here, any errors return to get out
         if self.fast_timer_comms_active:
+            
+            self.vel_l = self.driver.left_vel_estimate()
+            self.vel_r = self.driver.right_vel_estimate()
+            
             # check to see if we're initialised and engaged motor
             try:
                 if not self.driver.has_prerolled(): #ensure_prerolled():
@@ -398,11 +402,31 @@ class ODriveNode(object):
                     left_linear_val, right_linear_val = self.twist2diff( self.target_linear_vel, self.target_rotate_vel )
                     
                     self.driver.drive(left_linear_val, right_linear_val)
+                    #rospy.loginfo("%f %f   -   %f %f" %(self.vel_l, left_linear_val, self.vel_r, right_linear_val))
+
 
                     self.last_speed = max(abs(left_linear_val), abs(right_linear_val))
             
                 else:    # Odrive in torque mode 
-                    pass
+
+
+                    current_linear_vel, current_rotate_vel = self.diff2twist( self.vel_l, self.vel_r )
+                    linear_error = self.target_linear_vel - current_linear_vel
+                    rotate_error = self.target_rotate_vel - current_rotate_vel
+                    #rospy.loginfo("%f %f" %(linear_error, rotate_error))
+                    
+                    linear_p = 6
+                    rotate_p = 10
+
+                    linear_torque = linear_error * linear_p
+                    rotate_torque = rotate_error * rotate_p
+                    
+                    left_linear_val, right_linear_val = self.twist2diff(linear_torque,rotate_torque)
+                    #rospy.loginfo("%f %f   -   %f %f" %(self.vel_l, left_linear_val, self.vel_r, right_linear_val))
+
+                    self.driver.drive(left_linear_val, right_linear_val)
+
+                    self.last_speed = max(abs(left_linear_val), abs(right_linear_val))
                     
             except (ObjectLostError, ChannelDamagedException):
                 rospy.logerr("ODrive USB connection failure in drive_cmd." + traceback.format_exc(1))
@@ -411,8 +435,6 @@ class ODriveNode(object):
             except:
                 rospy.logerr("motor drive unknown failure:" + traceback.format_exc())
                 self.fast_timer_comms_active = False
-
-            
     
     
     def terminate(self):
