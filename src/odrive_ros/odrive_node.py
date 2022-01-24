@@ -544,14 +544,14 @@ class ODriveNode(object):
     
     def twist2diff(self, forward, ccw):
         angular_to_linear = ccw * (self.wheel_track/2.0) 
-        left_linear_val  = float((forward - angular_to_linear) * self.tyre_circumference)
-        right_linear_val = float((forward + angular_to_linear) * self.tyre_circumference)
+        left_linear_val  = float((forward - angular_to_linear) / self.tyre_circumference)
+        right_linear_val = float((forward + angular_to_linear) / self.tyre_circumference)
     
         return left_linear_val, right_linear_val
 
     def diff2twist(self, left, right ):
-        forward = ((left+right) / 2) / self.tyre_circumference
-        ccw = ((right-left) / self.wheel_track) / self.tyre_circumference
+        forward = ((left+right) / 2) * self.tyre_circumference
+        ccw = ((right-left) / self.wheel_track) * self.tyre_circumference
         return forward, ccw
 
 
@@ -742,7 +742,8 @@ class ODriveNode(object):
         self.tf_msg.transform.rotation.z = q[2]
         self.tf_msg.transform.rotation.w = q[3]
         
-        if self.publish_raw_odom:
+	# TODO change topics to floats?
+        if self.publish_raw_odom and False:
             self.raw_odom_publisher_encoder_left.publish(self.new_pos_l)
             self.raw_odom_publisher_encoder_right.publish(self.new_pos_r)
             self.raw_odom_publisher_vel_left.publish(self.vel_l)
